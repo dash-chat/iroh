@@ -1080,7 +1080,15 @@ impl State {
                     | Some(Err(PathError::MaxPathIdReached)) => {
                         self.scheduled_open_path =
                             Some(Instant::now() + Duration::from_millis(333));
-                        self.pending_open_paths.push_back(open_4tuple.clone());
+                        // iroh#4390: dedup + cap so repeated MaxPathIdReached /
+                        // RemoteCidsExhausted retries can't grow this VecDeque
+                        // without bound (multi-GB OOM).
+                        const MAX_PENDING_OPEN_PATHS: usize = 1024;
+                        if !self.pending_open_paths.contains(open_4tuple)
+                            && self.pending_open_paths.len() < MAX_PENDING_OPEN_PATHS
+                        {
+                            self.pending_open_paths.push_back(open_4tuple.clone());
+                        }
                         trace!(?open_4tuple, ?ret, "scheduling open_path");
                     }
                     _ => warn!(?ret, "Opening path failed"),
