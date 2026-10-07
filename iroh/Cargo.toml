@@ -200,6 +200,10 @@ name = "integration"
 path = "tests/integration.rs"
 
 [[example]]
+name = "stale-direct-addrs"
+required-features = []
+
+[[example]]
 name = "listen"
 required-features = []
 
